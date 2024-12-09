@@ -3,11 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 func UpdateCopyright(filename string) bool {
@@ -15,43 +15,28 @@ func UpdateCopyright(filename string) bool {
 	if ext != ".go" {
 		return false
 	}
-	file, err := os.OpenFile(filename, os.O_RDWR, 0644)
+	//file, err := os.OpenFile(filename, os.O_RDWR, 0644)
+	file, err := os.Open(filename)
+	defer file.Close()
 	if err != nil {
 		return false
 	}
-	var firstLine string
+	var lines []string
 	scanner := bufio.NewScanner(file)
 	if scanner.Scan() {
-		firstLine = scanner.Text()
+		firstLine := scanner.Text()
 		newLine, err := checkCopyright(firstLine)
 		if err != nil {
 			//fmt.Println(err)
 			return false
 		}
-		err = file.Truncate(0)
-		if err != nil {
-			//fmt.Println(err)
-			return false
-		}
-		_, err = file.Seek(0, io.SeekStart)
-		if err != nil {
-			//fmt.Println(err)
-			return false
-		}
-		_, err = file.WriteString(newLine + "\n")
-		if err != nil {
-			//fmt.Println(err)
-			return false
-		}
+		lines = append(lines, newLine)
 		for scanner.Scan() {
-			_, err = file.WriteString(scanner.Text() + "\n")
-			if err != nil {
-				//fmt.Println(err)
-				return false
-			}
+			lines = append(lines, scanner.Text())
 		}
 	}
-	if err := scanner.Err(); err != nil {
+	err = os.WriteFile(filename, []byte(strings.Join(lines, "\n")), 0644)
+	if err != nil {
 		//fmt.Println(err)
 		return false
 	}
