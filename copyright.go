@@ -15,6 +15,11 @@ func UpdateCopyright(filename string) bool {
 	if ext != ".go" {
 		return false
 	}
+	path, _ := filepath.Abs(filename)
+	if strings.Contains(path, "generated") || strings.Contains(path, ".pb") {
+		//fmt.Println("Ignoring file:", filename)
+		return false
+	}
 	//file, err := os.OpenFile(filename, os.O_RDWR, 0644)
 	file, err := os.Open(filename)
 	defer file.Close()
@@ -35,6 +40,9 @@ func UpdateCopyright(filename string) bool {
 			lines = append(lines, scanner.Text())
 		}
 	}
+	lastLine := lines[len(lines)-1]
+	lastLine = lastLine + "\n"
+	lines[len(lines)-1] = lastLine
 	err = os.WriteFile(filename, []byte(strings.Join(lines, "\n")), 0644)
 	if err != nil {
 		//fmt.Println(err)
